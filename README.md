@@ -74,6 +74,6 @@ Open your browser and go to
 ```
 http://localhost:5001
 ```
-![Web Demo1](demo_web.png)
+![Web Demo1](app/demo_web.png)
 
-![Web Demo2](web_demo2.png)
+![Web Demo2](app/web_demo2.png)
