@@ -4,7 +4,7 @@ This is a Python-based agent-based modeling (ABM) tool for simulating villager b
 
 The simulation supports configurable demographic and economic parameters, and produces visual and numerical outputs.
 
-![Web Demo](demo_web.png)
+![Web Demo](app/demo_web.png)
 
 ---
 
