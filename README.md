@@ -74,6 +74,23 @@ Open your browser and go to
 ```
 http://localhost:5001
 ```
-![Web Demo1](app/demo_web.png)
 
-![Web Demo2](app/web_demo2.png)
+Run test
+
+```
+python -m unittest tests/test_utils.py
+```
+or 
+```
+python -m unittest discover tests
+```
+
+If all tests passed, then you will see similar outputs
+
+```.
+---------------------------------------
+Ran 1 test in 0.002s
+
+OK
+
+```

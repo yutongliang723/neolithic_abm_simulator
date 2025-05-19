@@ -1,5 +1,4 @@
 from flask import Flask, request, jsonify, render_template, send_from_directory
-import random
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -18,7 +17,8 @@ import utils
 app = Flask(__name__)
 progress_percent = 0
 RESULTS_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'run_results', 'website')
-os.makedirs(RESULTS_FOLDER, exist_ok=True)
+LATEST_FOLDER = os.path.join(RESULTS_FOLDER, 'latest')
+os.makedirs(LATEST_FOLDER, exist_ok=True)
 
 @app.route('/')
 def home():
@@ -28,7 +28,7 @@ def home():
 def serve_results(filename):
     return send_from_directory(RESULTS_FOLDER, filename)
 
-@app.route("/progress")
+@app.route('/progress')
 def get_progress():
     global progress_percent
     return jsonify({"percent": progress_percent})
@@ -36,7 +36,7 @@ def get_progress():
 @app.route('/run_simulation', methods=['POST'])
 def run_simulation():
     global progress_percent
-    progress_percent = 0  # reset at start
+    progress_percent = 0
 
     data = request.json
     required_params = [
@@ -54,8 +54,8 @@ def run_simulation():
             "num_house": int(data["num_house"]),
             "year": int(data["year"]),
             "land_cells": int(data["land_cells"]),
-            "prod_multiplier": 1.0,
-            "fishing_discount": 0.0,
+            "prod_multiplier": 2,
+            "fishing_discount": 2,
             "spare_food_enabled": data["spare_food_enabled"] == "true",
             "fallow_farming": data["fallow_farming"] == "true",
             "emigrate_enabled": data["emigrate_enabled"] == "true",
@@ -93,31 +93,17 @@ def run_simulation():
                 "exceed_member": True
             }
         }
-
     except (ValueError, TypeError) as e:
         return jsonify({"error": f"Invalid parameter: {e}"}), 400
 
-    timestamp = str(int(time.time()))
-    temp_folder = os.path.join(RESULTS_FOLDER, timestamp)
-    os.makedirs(temp_folder, exist_ok=True)
-
-    # Launch simulation in background
-    thread = threading.Thread(target=run_simulation_task, args=(params, temp_folder, timestamp))
+    thread = threading.Thread(target=run_simulation_task, args=(params,))
     thread.start()
+    return jsonify({"status": "started", "folder": "latest"})
 
-    return jsonify({"status": "started", "folder": timestamp})
-
-def run_simulation_task(params, temp_folder, timestamp):
+def run_simulation_task(params):
     global progress_percent
 
-    results_png = os.path.join(temp_folder, "results.svg")
-    results_second_png = os.path.join(temp_folder, "results_second.svg")
-    results_csv = os.path.join(temp_folder, "simulation_results.csv")
-    animation_gif = os.path.join(temp_folder, "simulation.gif")
-
-    with open(os.path.join(temp_folder, "parameters.json"), "w") as f:
-        json.dump(params, f, indent=4)
-
+    # Run setup
     demog_scale()
     vec1_instance = Vec1(params)
 
@@ -166,25 +152,47 @@ def run_simulation_task(params, temp_folder, timestamp):
             trading_enabled=params["trading_enabled"],
             farming_counter_max=params["farming_counter_max"]
         )
-
         progress_percent = int((i + 1) / params["year"] * 100)
 
-    village.plot_simulation_results(results_png, results_csv, vec1_instance)
-    village.plot_simulation_results_second(results_second_png)
+    # Clean latest/
+    if os.path.exists(LATEST_FOLDER):
+        shutil.rmtree(LATEST_FOLDER)
+    os.makedirs(LATEST_FOLDER, exist_ok=True)
+
+    # Save parameters and output files
+    with open(os.path.join(LATEST_FOLDER, "parameters.json"), "w") as f:
+        json.dump(params, f, indent=4)
+
+    # Prepare paths
+    results_svg = os.path.join(LATEST_FOLDER, "results.svg")
+    results_second_svg = os.path.join(LATEST_FOLDER, "results_second.svg")
+    results_csv = os.path.join(LATEST_FOLDER, "simulation_results.csv")
+    animation_gif = os.path.join(LATEST_FOLDER, "simulation.gif")
+
+    # Generate plots and animation
+    village.plot_simulation_results(results_svg, results_csv, vec1_instance)
+    village.plot_simulation_results_second(results_second_svg)
     village.generate_animation(animation_gif, grid_dim=math.ceil(math.sqrt(params['land_cells'])))
 
-    # Save results to a known "latest" location for retrieval
-    latest_folder = os.path.join(RESULTS_FOLDER, "latest")
-    if os.path.exists(latest_folder):
-        shutil.rmtree(latest_folder)
-    shutil.copytree(temp_folder, latest_folder)
+    # ✅ Wait until all four files are physically on disk
+    expected_files = [results_svg, results_second_svg, results_csv, animation_gif]
+    timeout = 20  # seconds max to wait
+    elapsed = 0
+    poll_interval = 0.5
 
-    # Cleanup old
-    all_runs = sorted([d for d in os.listdir(RESULTS_FOLDER) if os.path.isdir(os.path.join(RESULTS_FOLDER, d)) and d != "latest"], reverse=True)
-    for old_run in all_runs[5:]:
-        shutil.rmtree(os.path.join(RESULTS_FOLDER, old_run))
+    while elapsed < timeout:
+        if all(os.path.isfile(f) and os.path.getsize(f) > 0 for f in expected_files):
+            break
+        time.sleep(poll_interval)
+        elapsed += poll_interval
 
+    # Only now, report simulation as complete
     progress_percent = 100
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5001)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(debug=True, host='0.0.0.0', port=port)
+
+import os
+port = int(os.environ.get("PORT", 5000))
+app.run(host='0.0.0.0', port=port)
