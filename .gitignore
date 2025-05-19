@@ -3,4 +3,4 @@ experiment_results
 app/__pycache__/
 tests/__pycache__/
 .DS_Store
-app/run_results/website/
+app/run_results/
