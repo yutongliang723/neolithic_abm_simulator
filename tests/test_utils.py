@@ -2,9 +2,9 @@ import unittest
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'app')))
-from vec import Vec1
-from village import Village
-from utils import generate_random_village
+from app.vec import Vec1
+from app.village import Village
+from app.utils import generate_random_village
 
 class TestVillageGeneration(unittest.TestCase):
     def test_generate_random_village(self):
