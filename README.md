@@ -94,3 +94,7 @@ Ran 1 test in 0.002s
 OK
 
 ```
+
+After entering the desired parameters and executed the experiment by clicking "Run Simulation", the result similar to the image below can be expected.
+
+![Web Demo](app/demo_web2.png)

@@ -1,13 +1,14 @@
 import unittest
 import os
 import sys
+# append path to allow import of app modules
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'app')))
 from app.vec import Vec1
 from app.village import Village
 from app.utils import generate_random_village
 
 class TestVillage(unittest.TestCase):
-    def test_generate_random_village(self):
+    def test_generate_random_village(self): # test function 1
         params = {
             "num_house": 10,
             "land_cells": 50,
@@ -37,7 +38,7 @@ class TestVillage(unittest.TestCase):
 
         self.assertEqual(len(village.households), 10)
 
-    def test_simulation_runs_per_year(self):
+    def test_simulation_runs_per_year(self): # test function 2
         params = {
             "num_house": 5,
             "land_cells": 20,
@@ -132,5 +133,5 @@ class TestVillage(unittest.TestCase):
 
         self.assertTrue(len(village.households) > 0)
 
-if __name__ == '__main__':
+if __name__ == '__main__': # run the test function
     unittest.main()

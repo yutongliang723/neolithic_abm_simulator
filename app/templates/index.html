@@ -4,7 +4,10 @@
   <meta charset="UTF-8" />
   <title>Village Simulation</title>
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <!-- this file is created together with the help from GenAI -->
+  <!-- internal css for styling the app -->
   <style>
+    /* base layout */
     body {
       font-family: Arial, sans-serif;
       background-color: #eef2f7;
@@ -16,6 +19,8 @@
       min-height: 100vh;
       margin: 0;
     }
+    /* main container for the form and results */
+
     #container {
       width: 95%;
       max-width: 900px;
@@ -29,6 +34,8 @@
       text-align: center;
       margin-bottom: 30px;
     }
+    /* responsive form layout using css grid */
+
     form {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -152,7 +159,9 @@
 <body>
   <div id="container">
     <h1>Village Simulation</h1>
+    <!-- simulation input form -->
     <form id="simulationForm">
+      <!-- input fields for simulation parameters -->
       <div>
         <label for="year">Years to Simulate:</label>
         <input type="number" id="year" name="year" value="500" required />
@@ -183,19 +192,21 @@
         <label for="food_expiration_steps">Food Expiration Steps:</label>
         <input type="number" id="food_expiration_steps" name="food_expiration_steps" value="5" required />
       </div>
+      <!-- feature toggles as checkboxes -->
       <div class="checkbox-group">
         <label><input type="checkbox" id="spare_food_enabled" checked /> Spare Food Enabled</label>
         <label><input type="checkbox" id="fallow_farming" checked /> Fallow Farming</label>
         <label><input type="checkbox" id="emigrate_enabled" checked /> Emigration Enabled</label>
         <label><input type="checkbox" id="trading_enabled" checked /> Trading Enabled</label>
       </div>
+      <!-- action buttons -->
       <div class="button-group">
         <button type="button" id="runButton">Run Simulation</button>
         <button type="button" id="clearButton">Clear</button>
       </div>
 
     </form>
-
+    <!-- progress feedback UI -->
     <div id="loading">Running... this may take a few seconds 😉</div>
     <div id="progressContainer">
       <div id="progressBarWrapper"><div id="progressBar"></div></div>
@@ -204,6 +215,7 @@
     <p style="text-align: center; font-size: 0.9em; color: #666; margin-top: 10px;">
         If the simulation output appears incorrect or incomplete, please try refreshing the page and re-running.
       </p>
+    <!-- result display -->
     <div id="results">
       <h2>Simulation Results</h2>
       <div class="result-grid">
@@ -217,7 +229,7 @@
   <footer>
     Developed by Yutong Liang – <a href="mailto:liang_yutong@student.ceu.edu">liang_yutong@student.ceu.edu</a>
   </footer>
-
+  <!-- JavaScript for Interaction and AJAX -->
   <script>
     $(document).ready(function () {
       $("#land_cells, #num_house").on("input", function () {
@@ -227,7 +239,7 @@
           $("#num_house").val(land);
         }
       });
-
+      // run simulation
       $("#runButton").click(function () {
         $("#simulationImage, #simulationGif, #giniImage").attr("src", "");
         $("#results").hide();
@@ -235,7 +247,7 @@
         $("#progressContainer").show();
         $("#progressBar").css("width", "0%");
         $("#progressText").text("Starting...");
-
+        // collect input parameters
         const data = {
           year: $("#year").val(),
           num_house: $("#num_house").val(),
@@ -249,7 +261,7 @@
           emigrate_enabled: $("#emigrate_enabled").is(":checked") ? "true" : "false",
           trading_enabled: $("#trading_enabled").is(":checked") ? "true" : "false",
         };
-
+        // POST to server
         $.ajax({
           url: "/run_simulation",
           type: "POST",
@@ -269,7 +281,7 @@
           },
         });
       });
-
+      // clear form and results
       $("#clearButton").click(function () {
         $("#simulationForm")[0].reset();
         $("#simulationImage, #simulationGif, #giniImage").attr("src", "");
@@ -279,7 +291,7 @@
         $("#progressBar").css("width", "0%");
         $("#progressText").text("Progress: 0%");
       });
-
+      // wait until all result files are ready, then display them
       function waitForLatestResultsThenDisplay() {
         const t = "?t=" + new Date().getTime();
         
@@ -310,7 +322,7 @@
         function pollUntilAllReady() {
             checkAllReady(isReady => {
                 if (isReady) {
-                // Wait 2 seconds to allow GIF to finish loading/rendering
+                // 2ait 2 seconds to allow GIF to finish loading/rendering
                 setTimeout(() => {
                     $("#simulationImage").attr("src", files[0] + t);
                     $("#giniImage").attr("src", files[1] + t);
@@ -318,9 +330,9 @@
                     $("#results").show();
                     $("#loading").hide();
                     $("#progressText").text("Simulation Complete!");
-                }, 500); // Delay for rendering stability
+                }, 500); // delay for rendering stability
                 } else {
-                setTimeout(pollUntilAllReady, 1000); // Retry after 1 second
+                setTimeout(pollUntilAllReady, 1000); // retry after 1 second
                 }
             });
             }
@@ -342,9 +354,10 @@
               waitForLatestResultsThenDisplay();
             }
           });
-        }, 2000);
+        }, 2000); // poll evry 2 seconds 
       }
     });
   </script>
 </body>
-</html>
+</html> 
+<!-- this file is created together with the help from GenAI -->

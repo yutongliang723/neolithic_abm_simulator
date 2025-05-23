@@ -57,7 +57,7 @@ class Village:
         self.migrate_counter = 0
 
 
-    def initialize_network(self):
+    def initialize_network(self): # estabilshing a network within the Neolithic village
         
         for household in self.households:
             self.network[household.id] = {
@@ -131,6 +131,7 @@ class Village:
         self.spare_food.append((amount, self.time))
 
     def reduce_food_from_village(self, house, food_amount):
+        """ Helper function to deduct food"""
         still_need = food_amount
         while still_need > 0 and self.spare_food:
             amount, age_added = self.spare_food[0]
@@ -145,6 +146,7 @@ class Village:
         return food_amount - still_need
     
     def manage_luxury_goods(self, exchange_rate, excess_food_ratio, vec1_instance):
+        """Helper function to deduct luxury goods"""
         for household in self.households:
             # food_storage_needed = household.calculate_food_need()
             food_storage_needed = sum(vec1_instance.rho[member.get_age_group_index(vec1_instance)] for member in household.members)
@@ -310,9 +312,7 @@ class Village:
             c['connectivity'].pop(household.id, None)
 
     def check_consistency(self):
-        """
-        Check that all components are consistent (i.e. no errors introduced)
-        """
+        """Check that all components are consistent (i.e. no errors introduced)"""
 
         all_agents = set() # keep track of all agent IDs encountered
         all_households = set() # all household IDs
@@ -594,24 +594,24 @@ class Village:
     def generate_animation(self, file_path, grid_dim):
         """Generate an animation of land usage over time."""
         if not self.land_usage_over_time:
-            # No data available to create animation
+            # no data available to create animation
             return
 
-        # Load color map and font
+        # load color map and font
         cmap = plt.get_cmap('OrRd')
         try:
-            font = ImageFont.truetype("arial.ttf", 20)  # TrueType font
+            font = ImageFont.truetype("arial.ttf", 20)  # trueType font
         except IOError:
-            font = ImageFont.load_default()  # Fallback to default if TTF font is unavailable
+            font = ImageFont.load_default()  # fallback to default if TTF font is unavailable
 
-        cell_size = 100  # Each cell will be 100x100 pixels
-        image_size = grid_dim * cell_size  # Ensures a square grid layout
+        cell_size = 100  # each cell will be 100x100 pixels
+        image_size = grid_dim * cell_size  # ensures a square grid layout
 
         def render_animation(year):
             """Render the animation for a given year."""
             year_data = self.land_usage_over_time[year]
             
-            # Create a new RGBA image
+            # create a new RGBA image
             image = Image.new('RGBA', (image_size, image_size), color=(255, 255, 255, 0))
             draw = ImageDraw.Draw(image)
 
@@ -620,20 +620,20 @@ class Village:
                 x *= cell_size
                 y *= cell_size
 
-                # Calculate color based on land quality
+                # calculate color based on land quality
                 quality = land_data['quality'] * 0.2
                 color = tuple(int(255 * c) for c in cmap(quality / 2)[:3])
                 
-                # Draw land cell
+                # draw land cell
                 draw.rectangle([(x, y), (x + cell_size, y + cell_size)], fill=color)
 
                 if land_data['occupied']:
-                    # Occupied cell: add text with household and land info
+                    # occupied cell: add text with household and land info
                     household_id = land_data['household_id']
                     agent_num = land_data['num_members']
                     text = f"{household_id}: # {agent_num}. Q: {round(quality, 2)}"
                     
-                    # Calculate text position and center it within the cell
+                    # calculate text position and center it within the cell
                     bbox = draw.textbbox((0, 0), text, font=font)
                     text_width = bbox[2] - bbox[0]
                     text_height = bbox[3] - bbox[1]
@@ -641,7 +641,7 @@ class Village:
                     text_x = x + (cell_size - text_width) // 2
                     text_y = y + (cell_size - text_height) // 2
 
-                    # Adjust to prevent clipping
+                    # adjust to prevent clipping
                     text_x = max(x + 5, min(text_x, x + cell_size - text_width - 5))
                     text_y = max(y + 5, min(text_y, y + cell_size - text_height - 5))
                     
@@ -651,13 +651,13 @@ class Village:
             draw.text((10, 10), f"Year: {year + 1}; Population: {self.population[year]}; # Houses: {self.num_house[year]}", fill=(0, 0, 0), font=font)
             return image
 
-        # Generate frames for each year
+        # generate frames for each year
         animation_frames = [render_animation(year) for year in range(len(self.land_usage_over_time))]
 
-        # Save as a GIF
+        # save as a GIF
         animation_frames[0].save(file_path, format='GIF', append_images=animation_frames[1:], save_all=True, duration=200, loop=0, optimize=True)
 
-        # Display in notebook (if using Jupyter or IPython environment)
+        # display in notebook (if using Jupyter or IPython environment)
         # display(widgets.Image(value=open(file_path, 'rb').read()))
 
     

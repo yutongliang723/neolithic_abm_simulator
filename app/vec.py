@@ -1,7 +1,7 @@
 import warnings
 warnings.filterwarnings("ignore")
 import pandas as pd
-
+"""This file is to load the demographic vectors params."""
 class Vec1:
     def __init__(self, params):
         try:

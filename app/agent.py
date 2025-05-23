@@ -5,7 +5,6 @@ import household
 import itertools
 
 
-
 class Agent:
     _id_iter = itertools.count(start = 1)
     def __init__(self, age, gender, household_id, fertility):

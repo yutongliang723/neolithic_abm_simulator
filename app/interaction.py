@@ -1,3 +1,5 @@
+# libraries import
+
 from flask import Flask, request, jsonify, render_template, send_from_directory
 import matplotlib
 matplotlib.use('Agg')
@@ -15,31 +17,31 @@ from village import Village
 import utils
 
 app = Flask(__name__)
-progress_percent = 0
-RESULTS_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'run_results', 'website')
+progress_percent = 0  # global variable to track progress
+RESULTS_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'run_results', 'website') # result folder
 LATEST_FOLDER = os.path.join(RESULTS_FOLDER, 'latest')
 os.makedirs(LATEST_FOLDER, exist_ok=True)
 
 @app.route('/')
-def home():
+def home(): # render homepage (online deployed app option)
     return render_template('index.html')
 
 @app.route('/run_results/website/<path:filename>')
-def serve_results(filename):
+def serve_results(filename): # send files from the result folder
     return send_from_directory(RESULTS_FOLDER, filename)
 
 @app.route('/progress')
-def get_progress():
+def get_progress(): # return the simulation progress of one experiment session
     global progress_percent
     return jsonify({"percent": progress_percent})
 
 @app.route('/run_simulation', methods=['POST'])
-def run_simulation():
+def run_simulation(): # the main function of the simulation
     global progress_percent
     progress_percent = 0
 
     data = request.json
-    required_params = [
+    required_params = [ # paramters displayed in UI
         "num_house", "year", "land_cells",
         "spare_food_enabled", "fallow_farming", "emigrate_enabled",
         "land_recovery_rate", "food_expiration_steps", "trading_enabled"
@@ -49,6 +51,7 @@ def run_simulation():
         if param not in data:
             return jsonify({"error": f"Missing required parameter: {param}"}), 400
 
+    # read and set the static parameters 
     try:
         params = {
             "num_house": int(data["num_house"]),
@@ -103,11 +106,11 @@ def run_simulation():
 def run_simulation_task(params):
     global progress_percent
 
-    # Run setup
+    # run setup
     demog_scale()
     vec1_instance = Vec1(params)
 
-    village = utils.generate_random_village(
+    village = utils.generate_random_village( # generate a neolithic village
         num_households=params["num_house"],
         num_land_cells=params["land_cells"],
         vec1_instance=vec1_instance,
@@ -119,10 +122,10 @@ def run_simulation_task(params):
         luxury_goods_in_village=params["luxury_goods_in_village"]
     )
 
-    village.initialize_network()
+    village.initialize_network() # set up the network.
     village.initialize_network_relationship()
 
-    for i in range(params["year"]):
+    for i in range(params["year"]): # the main simulation function
         village.run_simulation_step(
             vec1_instance=vec1_instance,
             prod_multiplier=params["prod_multiplier"],
@@ -154,27 +157,27 @@ def run_simulation_task(params):
         )
         progress_percent = int((i + 1) / params["year"] * 100)
 
-    # Clean latest/
+    # clean latest/ to prevent catching
     if os.path.exists(LATEST_FOLDER):
         shutil.rmtree(LATEST_FOLDER)
     os.makedirs(LATEST_FOLDER, exist_ok=True)
 
-    # Save parameters and output files
+    # save parameters and output files
     with open(os.path.join(LATEST_FOLDER, "parameters.json"), "w") as f:
         json.dump(params, f, indent=4)
 
-    # Prepare paths
+    # prepare paths to data viz
     results_svg = os.path.join(LATEST_FOLDER, "results.svg")
     results_second_svg = os.path.join(LATEST_FOLDER, "results_second.svg")
     results_csv = os.path.join(LATEST_FOLDER, "simulation_results.csv")
     animation_gif = os.path.join(LATEST_FOLDER, "simulation.gif")
 
-    # Generate plots and animation
+    # generate plots and animation
     village.plot_simulation_results(results_svg, results_csv, vec1_instance)
     village.plot_simulation_results_second(results_second_svg)
     village.generate_animation(animation_gif, grid_dim=math.ceil(math.sqrt(params['land_cells'])))
 
-    # ✅ Wait until all four files are physically on disk
+    # wait until all four files are physically on disk
     expected_files = [results_svg, results_second_svg, results_csv, animation_gif]
     timeout = 20  # seconds max to wait
     elapsed = 0
@@ -186,13 +189,16 @@ def run_simulation_task(params):
         time.sleep(poll_interval)
         elapsed += poll_interval
 
-    # Only now, report simulation as complete
+    # only now, report simulation as complete
     progress_percent = 100
 
+# start the server
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5002))
     app.run(debug=True, host='0.0.0.0', port=port)
 
+
+# starting server for version for online app deployment
 import os
 port = int(os.environ.get("PORT", 5000))
 app.run(host='0.0.0.0', port=port)
